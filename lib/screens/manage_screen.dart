@@ -4,6 +4,10 @@ import '../models/nav_item.dart';
 import '../theme/app_colors.dart';
 import '../widgets/register_employee_view.dart';
 import '../widgets/sub_section_nav_bar.dart';
+import '../widgets/add_exclude_phone_dialog.dart';
+import '../widgets/import_exclude_phone_dialog.dart';
+import '../widgets/create_user_view.dart';
+import '../widgets/create_call_note_template_view.dart';
 
 class ManageScreen extends StatefulWidget {
   final String? activeSubItemId;
@@ -30,18 +34,43 @@ class _ManageScreenState extends State<ManageScreen> {
   bool _selectAll = false;
   final Set<int> _selectedRowIds = {};
 
+  // Search filter controllers for Employees
   final TextEditingController _searchEmployeeCtrl = TextEditingController();
   final TextEditingController _searchCodeCtrl = TextEditingController();
   final TextEditingController _searchTagCtrl = TextEditingController();
   final TextEditingController _searchModelCtrl = TextEditingController();
   final TextEditingController _searchVersionCtrl = TextEditingController();
 
+  // Exclude Phone Numbers State
   final TextEditingController _searchContactNameCtrl = TextEditingController();
   final TextEditingController _searchContactNumberCtrl = TextEditingController();
   int _excludePageSize = 50;
   bool _selectAllExcluded = false;
   final Set<int> _selectedExcludedIds = {};
+  bool _sortExcludeAscending = true;
   late List<Map<String, dynamic>> _excludedNumbersList;
+
+  // Manage Users State
+  bool _isCreatingUser = false;
+  Map<String, dynamic>? _editingUser;
+  bool _showTrashedUsers = false;
+  int _usersPageSize = 50;
+  bool _sortUserNameAscending = true;
+  final TextEditingController _searchUserNameCtrl = TextEditingController();
+  final TextEditingController _searchUserEmailCtrl = TextEditingController();
+  final TextEditingController _searchUserPhoneCtrl = TextEditingController();
+  late List<Map<String, dynamic>> _usersList;
+
+  // Call Note Templates State
+  bool _isCreatingCallNoteTemplate = false;
+  Map<String, dynamic>? _editingCallNoteTemplate;
+  int _templatesPageSize = 50;
+  bool _sortTemplateAscending = true;
+  final TextEditingController _searchTemplateTitleCtrl = TextEditingController();
+  final TextEditingController _searchTemplateDateCtrl = TextEditingController();
+  final Set<int> _selectedTemplateIds = {};
+  bool _selectAllTemplates = false;
+  late List<Map<String, dynamic>> _callNoteTemplatesList;
 
   late List<Map<String, dynamic>> _employeeRoster;
 
@@ -88,26 +117,38 @@ class _ManageScreenState extends State<ManageScreen> {
       },
     ];
 
-    _excludedNumbersList = [
+    _excludedNumbersList = [];
+    _usersList = [];
+    _callNoteTemplatesList = [
       {
         'id': 1,
-        'contactName': 'CEO Personal Line',
-        'contactNumber': '+91 99999 00001',
+        'title': 'not__interested__now',
+        'description': 'Customer expressed they are not interested at the current moment.',
+        'modifiedOn': '',
       },
       {
         'id': 2,
-        'contactName': 'Internal Testing Device',
-        'contactNumber': '+91 98888 11112',
+        'title': 'interested__followup',
+        'description': 'Customer is interested in our offerings and requested a follow-up.',
+        'modifiedOn': '',
       },
       {
         'id': 3,
-        'contactName': 'Bank Verification SMS Sender',
-        'contactNumber': '+91 97777 22223',
+        'title': 'shared__catalog',
+        'description': 'Product catalog and rate sheet shared with customer.',
+        'modifiedOn': '',
       },
       {
         'id': 4,
-        'contactName': 'Accounts Department Cell',
-        'contactNumber': '+91 96666 33334',
+        'title': 'call__back__scheduled',
+        'description': 'Customer requested a callback at a specific time slot.',
+        'modifiedOn': '',
+      },
+      {
+        'id': 5,
+        'title': 'call__not__picked',
+        'description': 'Call was not answered or rang out.',
+        'modifiedOn': '',
       },
     ];
   }
@@ -121,6 +162,11 @@ class _ManageScreenState extends State<ManageScreen> {
     _searchVersionCtrl.dispose();
     _searchContactNameCtrl.dispose();
     _searchContactNumberCtrl.dispose();
+    _searchUserNameCtrl.dispose();
+    _searchUserEmailCtrl.dispose();
+    _searchUserPhoneCtrl.dispose();
+    _searchTemplateTitleCtrl.dispose();
+    _searchTemplateDateCtrl.dispose();
     super.dispose();
   }
 
@@ -182,44 +228,11 @@ class _ManageScreenState extends State<ManageScreen> {
           ),
         ];
       case 'exclude_phone_numbers':
-        return [
-          ElevatedButton.icon(
-            onPressed: () => _showAddExcludeNumberDialog(context),
-            icon: const Icon(Icons.block_rounded, size: 16),
-            label: const Text('Exclude New Number'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC2626),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            ),
-          ),
-        ];
+        return [];
       case 'users':
-        return [
-          ElevatedButton.icon(
-            onPressed: () => _showAddUserDialog(context),
-            icon: const Icon(Icons.person_add_rounded, size: 16),
-            label: const Text('Invite User'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            ),
-          ),
-        ];
+        return [];
       case 'call_note_templates':
-        return [
-          ElevatedButton.icon(
-            onPressed: () => _showAddTemplateDialog(context, 'Call Note Template'),
-            icon: const Icon(Icons.add_rounded, size: 16),
-            label: const Text('New Note Template'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            ),
-          ),
-        ];
+        return [];
       case 'message_templates':
         return [
           ElevatedButton.icon(
@@ -447,6 +460,31 @@ class _ManageScreenState extends State<ManageScreen> {
                           Text('EXPORT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
                           Icon(Icons.arrow_drop_down, size: 18, color: Color(0xFF475569)),
                         ],
+                      ),
+                    ),
+                    const SizedBox(height: 16, child: VerticalDivider(width: 1, color: AppColors.border)),
+
+                    // EXCLUDE NUMBERS Menu Navigation
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedSubItem = 'exclude_phone_numbers';
+                        });
+                        if (widget.onSubItemSelected != null) {
+                          widget.onSubItemSelected!('exclude_phone_numbers');
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(4),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.phone_disabled_outlined, size: 15, color: Color(0xFFF97316)),
+                            SizedBox(width: 4),
+                            Text('EXCLUDE NUMBERS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFF97316))),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -951,7 +989,15 @@ class _ManageScreenState extends State<ManageScreen> {
               icon: const Icon(Icons.more_vert_rounded, size: 18, color: Color(0xFF64748B)),
               splashRadius: 18,
               onSelected: (action) {
-                if (action == 'tag') {
+                if (action == 'exclude_phone') {
+                  setState(() {
+                    _selectedSubItem = 'exclude_phone_numbers';
+                  });
+                  if (widget.onSubItemSelected != null) {
+                    widget.onSubItemSelected!('exclude_phone_numbers');
+                  }
+                  _showAddExcludeNumberDialog(context, prefilledEmployee: emp);
+                } else if (action == 'tag') {
                   _showAddTagDialog(emp);
                 } else if (action == 'trash') {
                   setState(() => emp['isTrashed'] = true);
@@ -966,6 +1012,7 @@ class _ManageScreenState extends State<ManageScreen> {
               },
               itemBuilder: (ctx) => [
                 const PopupMenuItem(value: 'Edit Employee', child: Text('Edit Employee')),
+                const PopupMenuItem(value: 'exclude_phone', child: Text('Exclude Phone Number')),
                 const PopupMenuItem(value: 'tag', child: Text('Add / Manage Tags')),
                 const PopupMenuItem(value: 'Sync Call Logs', child: Text('Force Sync Call Logs')),
                 const PopupMenuItem(value: 'trash', child: Text('Move to Trash', style: TextStyle(color: Colors.red))),
@@ -1034,7 +1081,7 @@ class _ManageScreenState extends State<ManageScreen> {
     );
   }
 
-  // 2. Exclude Phone Numbers View (Matches Screenshot Pixel-Perfect)
+  // 2. Exclude Phone Numbers View (Matches Image 3 Pixel-Perfect)
   Widget _buildExcludePhoneNumbersView() {
     final nameFilter = _searchContactNameCtrl.text.toLowerCase().trim();
     final numberFilter = _searchContactNumberCtrl.text.toLowerCase().trim();
@@ -1048,6 +1095,12 @@ class _ManageScreenState extends State<ManageScreen> {
       }
       return true;
     }).toList();
+
+    filteredList.sort((a, b) {
+      final nameA = a['contactName']?.toString().toLowerCase() ?? '';
+      final nameB = b['contactName']?.toString().toLowerCase() ?? '';
+      return _sortExcludeAscending ? nameA.compareTo(nameB) : nameB.compareTo(nameA);
+    });
 
     return Container(
       decoration: BoxDecoration(
@@ -1069,23 +1122,23 @@ class _ManageScreenState extends State<ManageScreen> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: Color(0xFF1E293B),
                     letterSpacing: -0.3,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.info_outline_rounded, size: 14, color: Colors.orange.shade700),
+                    Icon(Icons.info_outline_rounded, size: 15, color: Colors.orange.shade700),
                     const SizedBox(width: 6),
                     const Expanded(
                       child: Text(
                         'The numbers you will add here will be automatically excluded from all the reports. However, call logs will be synchronized for these numbers. Maximum 1500 numbers can be excluded.',
                         style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          height: 1.3,
+                          fontSize: 12.5,
+                          color: Color(0xFF64748B),
+                          height: 1.35,
                         ),
                       ),
                     ),
@@ -1102,16 +1155,46 @@ class _ManageScreenState extends State<ManageScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                // Bulk Delete Button (if any items selected)
+                if (_selectedExcludedIds.isNotEmpty) ...[
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _excludedNumbersList.removeWhere((e) => _selectedExcludedIds.contains(e['id']));
+                        final count = _selectedExcludedIds.length;
+                        _selectedExcludedIds.clear();
+                        _selectAllExcluded = false;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('$count excluded number(s) deleted.'),
+                            backgroundColor: const Color(0xFFDC2626),
+                          ),
+                        );
+                      });
+                    },
+                    icon: const Icon(Icons.delete_sweep_rounded, size: 15),
+                    label: Text('Delete Selected (${_selectedExcludedIds.length})'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFDC2626),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      elevation: 0,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+
                 // Add Number Button
                 OutlinedButton.icon(
                   onPressed: () => _showAddExcludeNumberDialog(context),
-                  icon: const Icon(Icons.person_add_alt_outlined, size: 16, color: Color(0xFFF97316)),
+                  icon: const Icon(Icons.person_add_alt_1_outlined, size: 16, color: Color(0xFFF59E0B)),
                   label: const Text(
                     'Add Number',
-                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFFF97316)),
+                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFFF59E0B)),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFF97316), width: 1.2),
+                    side: const BorderSide(color: Color(0xFFF59E0B), width: 1.2),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                   ),
@@ -1121,13 +1204,13 @@ class _ManageScreenState extends State<ManageScreen> {
                 // Import Numbers Button
                 OutlinedButton.icon(
                   onPressed: () => _showImportExcludeNumbersDialog(context),
-                  icon: const Icon(Icons.file_download_outlined, size: 16, color: Color(0xFFF97316)),
+                  icon: const Icon(Icons.file_download_outlined, size: 16, color: Color(0xFFF59E0B)),
                   label: const Text(
                     'Import Numbers',
-                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFFF97316)),
+                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFFF59E0B)),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFF97316), width: 1.2),
+                    side: const BorderSide(color: Color(0xFFF59E0B), width: 1.2),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                   ),
@@ -1138,23 +1221,23 @@ class _ManageScreenState extends State<ManageScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Show', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    const Text('Show', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                     const SizedBox(width: 8),
                     Container(
                       height: 32,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: const Color(0xFFCBD5E1)),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<int>(
                           value: _excludePageSize,
-                          icon: const Icon(Icons.arrow_drop_down, size: 18),
+                          icon: const Icon(Icons.arrow_drop_down, size: 18, color: Color(0xFF475569)),
                           items: [10, 25, 50, 100].map((size) {
                             return DropdownMenuItem<int>(
                               value: size,
-                              child: Text('$size', style: const TextStyle(fontSize: 12)),
+                              child: Text('$size', style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B))),
                             );
                           }).toList(),
                           onChanged: (val) {
@@ -1197,13 +1280,24 @@ class _ManageScreenState extends State<ManageScreen> {
                             ),
                             _tableCell(
                               width: colWidth,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: const [
-                                  Text('Contact Name', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
-                                  SizedBox(width: 4),
-                                  Icon(Icons.arrow_drop_up_rounded, size: 18, color: Color(0xFF94A3B8)),
-                                ],
+                              child: InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _sortExcludeAscending = !_sortExcludeAscending;
+                                  });
+                                },
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('Contact Name', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      _sortExcludeAscending ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
+                                      size: 18,
+                                      color: const Color(0xFF94A3B8),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                             _tableCell(
@@ -1245,7 +1339,7 @@ class _ManageScreenState extends State<ManageScreen> {
                             ),
                             _tableCell(
                               width: colWidth,
-                              child: _filterInput(_searchContactNameCtrl, 'Sear'),
+                              child: _filterInput(_searchContactNameCtrl, 'Search'),
                             ),
                             _tableCell(
                               width: colWidth,
@@ -1253,7 +1347,18 @@ class _ManageScreenState extends State<ManageScreen> {
                             ),
                             _tableCell(
                               width: actionWidth,
-                              child: const SizedBox.shrink(),
+                              child: (_searchContactNameCtrl.text.isNotEmpty || _searchContactNumberCtrl.text.isNotEmpty)
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear_rounded, size: 16, color: Color(0xFF94A3B8)),
+                                      tooltip: 'Clear filters',
+                                      onPressed: () {
+                                        setState(() {
+                                          _searchContactNameCtrl.clear();
+                                          _searchContactNumberCtrl.clear();
+                                        });
+                                      },
+                                    )
+                                  : const SizedBox.shrink(),
                             ),
                           ],
                         ),
@@ -1264,9 +1369,18 @@ class _ManageScreenState extends State<ManageScreen> {
                       if (filteredList.isEmpty)
                         Container(
                           width: minTableWidth,
-                          padding: const EdgeInsets.all(36),
+                          padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
                           alignment: Alignment.center,
-                          child: const Text('No excluded numbers found matching search.', style: TextStyle(color: AppColors.textSecondary)),
+                          child: Text(
+                            (_searchContactNameCtrl.text.isNotEmpty || _searchContactNumberCtrl.text.isNotEmpty)
+                                ? 'No excluded numbers found matching search.'
+                                : 'Numbers are not available to skip from Call Analysis & Reports',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF334155),
+                            ),
+                          ),
                         )
                       else
                         for (int i = 0; i < filteredList.length; i++) ...[
@@ -1404,193 +1518,1047 @@ class _ManageScreenState extends State<ManageScreen> {
     );
   }
 
-  // 3. Users View
+  // 3. Users View (Matches Image 1 and Integrates 4-Step CreateUserView)
   Widget _buildUsersView() {
-    final users = [
-      {'name': 'Kushal Asodia', 'email': 'kushal@taksecall.com', 'role': 'Super Admin', 'mfa': 'Enabled', 'lastLogin': 'Today, 5:10 PM'},
-      {'name': 'Rahul Sharma', 'email': 'rahul.s@taksecall.com', 'role': 'Sales Manager', 'mfa': 'Enabled', 'lastLogin': 'Today, 2:40 PM'},
-      {'name': 'Priya Verma', 'email': 'priya.v@taksecall.com', 'role': 'Support Lead', 'mfa': 'Disabled', 'lastLogin': 'Yesterday, 6:15 PM'},
-      {'name': 'Vikram Mehra', 'email': 'vikram.m@taksecall.com', 'role': 'Analytics Viewer', 'mfa': 'Enabled', 'lastLogin': '24 Aug 2026'},
-    ];
+    if (_isCreatingUser) {
+      return CreateUserView(
+        employeeRoster: _employeeRoster,
+        initialUser: _editingUser,
+        onBack: () {
+          setState(() {
+            _isCreatingUser = false;
+            _editingUser = null;
+          });
+        },
+        onUserCreated: (newUser) {
+          setState(() {
+            if (_editingUser != null) {
+              final idx = _usersList.indexWhere((u) => u['id'] == _editingUser!['id']);
+              if (idx != -1) {
+                _usersList[idx] = newUser;
+              } else {
+                _usersList.add(newUser);
+              }
+            } else {
+              _usersList.add(newUser);
+            }
+            _isCreatingUser = false;
+            _editingUser = null;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('User "${newUser['name']}" saved successfully!'),
+              backgroundColor: const Color(0xFF10B981),
+            ),
+          );
+        },
+      );
+    }
+
+    final filteredUsers = _usersList.where((u) {
+      final matchesTrashed = _showTrashedUsers ? (u['isTrashed'] == true) : (u['isTrashed'] != true);
+      if (!matchesTrashed) return false;
+
+      final nameQuery = _searchUserNameCtrl.text.toLowerCase().trim();
+      final emailQuery = _searchUserEmailCtrl.text.toLowerCase().trim();
+      final phoneQuery = _searchUserPhoneCtrl.text.toLowerCase().trim();
+
+      if (nameQuery.isNotEmpty && !(u['name'] ?? '').toString().toLowerCase().contains(nameQuery)) {
+        return false;
+      }
+      if (emailQuery.isNotEmpty && !(u['email'] ?? '').toString().toLowerCase().contains(emailQuery)) {
+        return false;
+      }
+      if (phoneQuery.isNotEmpty && !(u['phone'] ?? '').toString().toLowerCase().contains(phoneQuery)) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    filteredUsers.sort((a, b) {
+      final nameA = (a['name'] ?? '').toString().toLowerCase();
+      final nameB = (b['name'] ?? '').toString().toLowerCase();
+      return _sortUserNameAscending ? nameA.compareTo(nameB) : nameB.compareTo(nameA);
+    });
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text('Web Dashboard Users & Access Control', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          // Top Header
+          Padding(
+            padding: const EdgeInsets.only(left: 20, right: 20, top: 18, bottom: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Manage Users',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Padding(
+                      padding: EdgeInsets.only(top: 1),
+                      child: Icon(Icons.info_outline_rounded, size: 15, color: Color(0xFFF59E0B)),
+                    ),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'You can add users and give access for Callyzer web account. You can also customize User Permissions to filter accessible modules from your account',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          const Divider(height: 1),
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+          // Toolbar Action Bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Left: Show Trashed Users
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _showTrashedUsers = !_showTrashedUsers;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 17,
+                          height: 17,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: const Color(0xFFF59E0B),
+                              width: 1.5,
+                            ),
+                            color: _showTrashedUsers ? const Color(0xFFF59E0B) : Colors.white,
+                          ),
+                          child: _showTrashedUsers
+                              ? const Icon(Icons.check, size: 13, color: Colors.white)
+                              : null,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Show Trashed Users',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF334155),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Right: Add User + Show 50 Dropdown
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _editingUser = null;
+                          _isCreatingUser = true;
+                        });
+                      },
+                      icon: const Icon(Icons.person_add_alt_outlined, size: 16, color: Color(0xFFF59E0B)),
+                      label: const Text(
+                        'Add User',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFF59E0B),
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFF59E0B), width: 1.2),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        backgroundColor: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    const Text('Show', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFCBD5E1)),
+                        color: Colors.white,
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<int>(
+                          value: _usersPageSize,
+                          isDense: true,
+                          icon: const Icon(Icons.arrow_drop_down, size: 20, color: Color(0xFF64748B)),
+                          items: [10, 25, 50, 100].map((int val) {
+                            return DropdownMenuItem<int>(
+                              value: val,
+                              child: Text('$val', style: const TextStyle(fontSize: 13, color: Color(0xFF334155))),
+                            );
+                          }).toList(),
+                          onChanged: (newVal) {
+                            if (newVal != null) {
+                              setState(() {
+                                _usersPageSize = newVal;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Double Header Table + Rows
           LayoutBuilder(
             builder: (context, constraints) {
+              const double minTableWidth = 850;
+              final double actualWidth = constraints.maxWidth > minTableWidth ? constraints.maxWidth : minTableWidth;
+              const double srNoWidth = 80;
+              const double actionWidth = 90;
+
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                  child: DataTable(
-                    headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
-                    columnSpacing: 20,
-                    horizontalMargin: 16,
-                    columns: const [
-                      DataColumn(label: Text('User Profile', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Assigned Role', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('2FA Security', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Last Active Session', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                child: SizedBox(
+                  width: actualWidth,
+                  child: Column(
+                    children: [
+                      // Header Row 1: Titles
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF8FAFC),
+                          border: Border(
+                            top: BorderSide(color: Color(0xFFE2E8F0)),
+                            bottom: BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: srNoWidth,
+                              child: const Text('Sr. No.', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                            ),
+                            Expanded(
+                              child: InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _sortUserNameAscending = !_sortUserNameAscending;
+                                  });
+                                },
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('Name', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      _sortUserNameAscending ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
+                                      size: 18,
+                                      color: const Color(0xFF64748B),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Text('Email', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                                  SizedBox(width: 4),
+                                  Icon(Icons.unfold_more_rounded, size: 16, color: Color(0xFF94A3B8)),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Text('Phone', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                                  SizedBox(width: 4),
+                                  Icon(Icons.unfold_more_rounded, size: 16, color: Color(0xFF94A3B8)),
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                              width: actionWidth,
+                              child: const Text('Action', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Header Row 2: Search Filters
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(width: srNoWidth),
+                            Expanded(
+                              child: _filterInput(_searchUserNameCtrl, 'Search'),
+                            ),
+                            Expanded(
+                              child: _filterInput(_searchUserEmailCtrl, 'Search'),
+                            ),
+                            Expanded(
+                              child: _filterInput(_searchUserPhoneCtrl, 'Search'),
+                            ),
+                            SizedBox(
+                              width: actionWidth,
+                              child: (_searchUserNameCtrl.text.isNotEmpty || _searchUserEmailCtrl.text.isNotEmpty || _searchUserPhoneCtrl.text.isNotEmpty)
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear_rounded, size: 16, color: Color(0xFF94A3B8)),
+                                      tooltip: 'Clear filters',
+                                      onPressed: () {
+                                        setState(() {
+                                          _searchUserNameCtrl.clear();
+                                          _searchUserEmailCtrl.clear();
+                                          _searchUserPhoneCtrl.clear();
+                                        });
+                                      },
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Body Rows
+                      if (filteredUsers.isEmpty)
+                        Container(
+                          width: actualWidth,
+                          padding: const EdgeInsets.symmetric(vertical: 38, horizontal: 24),
+                          alignment: Alignment.center,
+                          child: Text(
+                            (_searchUserNameCtrl.text.isNotEmpty || _searchUserEmailCtrl.text.isNotEmpty || _searchUserPhoneCtrl.text.isNotEmpty)
+                                ? 'No users found matching search.'
+                                : 'Not any users registered yet',
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF475569),
+                            ),
+                          ),
+                        )
+                      else
+                        for (int i = 0; i < filteredUsers.length; i++) ...[
+                          _buildUserTableRow(filteredUsers[i], i + 1, srNoWidth, actionWidth),
+                          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                        ],
                     ],
-                    rows: users.map((u) {
-                      return DataRow(cells: [
-                        DataCell(Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircleAvatar(radius: 14, backgroundColor: AppColors.primarySubtle, child: Text(u['name']!.substring(0, 1), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary))),
-                            const SizedBox(width: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(u['name']!, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                                Text(u['email']!, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                              ],
-                            ),
-                          ],
-                        )),
-                        DataCell(Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(color: AppColors.primarySubtle, borderRadius: BorderRadius.circular(6)),
-                          child: Text(u['role']!, style: const TextStyle(fontSize: 11.5, color: AppColors.primary, fontWeight: FontWeight.w600)),
-                        )),
-                        DataCell(Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(u['mfa'] == 'Enabled' ? Icons.check_circle_rounded : Icons.cancel_rounded, size: 14, color: u['mfa'] == 'Enabled' ? AppColors.incoming : AppColors.missed),
-                            const SizedBox(width: 4),
-                            Text(u['mfa']!, style: const TextStyle(fontSize: 12)),
-                          ],
-                        )),
-                        DataCell(Text(u['lastLogin']!, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary))),
-                        DataCell(Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.security_rounded, size: 16, color: AppColors.textSecondary),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                              splashRadius: 16,
-                              tooltip: 'Edit Permissions',
-                              onPressed: () {},
-                            ),
-                            const SizedBox(width: 4),
-                            IconButton(
-                              icon: const Icon(Icons.more_vert_rounded, size: 16, color: AppColors.textSecondary),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                              splashRadius: 16,
-                              onPressed: () {},
-                            ),
-                          ],
-                        )),
-                      ]);
-                    }).toList(),
                   ),
                 ),
               );
             },
+          ),
+
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+          // Bottom Pagination Bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  filteredUsers.isEmpty ? '0 - 0 of 0' : '1 - ${filteredUsers.length} of ${filteredUsers.length}',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left_rounded, size: 20, color: Color(0xFF64748B)),
+                      onPressed: () {},
+                      splashRadius: 18,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFF64748B)),
+                      onPressed: () {},
+                      splashRadius: 18,
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  // 4. Call Note Templates View
-  Widget _buildCallNoteTemplatesView() {
-    final templates = [
-      {'title': 'Follow-Up Required Tomorrow', 'tag': 'Follow Up', 'shortcut': '/followup', 'content': 'Client requested quotation details via WhatsApp. Schedule follow-up call tomorrow at 11:00 AM.'},
-      {'title': 'Interested in Annual Enterprise Plan', 'tag': 'High Value', 'shortcut': '/enterprise', 'content': 'Decision maker interested in 10+ SIM bundle with custom AI transcription add-on. Sent demo invite.'},
-      {'title': 'Call Disconnected / Network Issue', 'tag': 'Retry', 'shortcut': '/disconn', 'content': 'Call dropped after 30 seconds due to network. Queued for auto-redial in 15 minutes.'},
-      {'title': 'Price Negotiation in Progress', 'tag': 'Negotiation', 'shortcut': '/price', 'content': 'Client is comparing with competitor. Offered 10% standard early-adopter waiver.'},
-      {'title': 'Wrong Contact / Invalid Number', 'tag': 'Invalid', 'shortcut': '/wrong', 'content': 'Person answered stated wrong number or left the organization. Flagged for contact verification.'},
-      {'title': 'Closed Won - Payment Link Sent', 'tag': 'Converted', 'shortcut': '/won', 'content': 'Agreed to onboarding. Razorpay invoice payment link shared via SMS and email.'},
-    ];
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 380,
-        mainAxisSpacing: 14,
-        crossAxisSpacing: 14,
-        mainAxisExtent: 170,
-      ),
-      itemCount: templates.length,
-      itemBuilder: (context, index) {
-        final t = templates[index];
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+  Widget _buildUserTableRow(Map<String, dynamic> user, int index, double srNoWidth, double actionWidth) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      child: Row(
+        children: [
+          SizedBox(
+            width: srNoWidth,
+            child: Text(
+              '$index',
+              style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(t['title']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5), overflow: TextOverflow.ellipsis),
+          Expanded(
+            child: Text(
+              user['name'] ?? '',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              user['email'] ?? '',
+              style: const TextStyle(fontSize: 13, color: Color(0xFF334155)),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              user['phone'] ?? '',
+              style: const TextStyle(fontSize: 13, color: Color(0xFF334155)),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          SizedBox(
+            width: actionWidth,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF64748B)),
+                  splashRadius: 16,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  tooltip: 'Edit User',
+                  onPressed: () {
+                    setState(() {
+                      _editingUser = user;
+                      _isCreatingUser = true;
+                    });
+                  },
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: Icon(
+                    user['isTrashed'] == true ? Icons.restore_from_trash_outlined : Icons.delete_outline_rounded,
+                    size: 16,
+                    color: user['isTrashed'] == true ? const Color(0xFF10B981) : const Color(0xFFDC2626),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(4)),
-                    child: Text(t['shortcut']!, style: const TextStyle(fontSize: 10.5, fontFamily: 'monospace', fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  splashRadius: 16,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  tooltip: user['isTrashed'] == true ? 'Restore User' : 'Move to Trash',
+                  onPressed: () {
+                    setState(() {
+                      if (user['isTrashed'] == true) {
+                        user['isTrashed'] = false;
+                      } else {
+                        user['isTrashed'] = true;
+                      }
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          user['isTrashed'] == true
+                              ? '${user['name']} moved to trash.'
+                              : '${user['name']} restored from trash.',
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 4. Call Note Templates View (Matches Image 1 and Integrates CreateCallNoteTemplateView)
+  Widget _buildCallNoteTemplatesView() {
+    if (_isCreatingCallNoteTemplate) {
+      return CreateCallNoteTemplateView(
+        initialTemplate: _editingCallNoteTemplate,
+        onBack: () {
+          setState(() {
+            _isCreatingCallNoteTemplate = false;
+            _editingCallNoteTemplate = null;
+          });
+        },
+        onSave: (templateData) {
+          setState(() {
+            if (_editingCallNoteTemplate != null) {
+              final idx = _callNoteTemplatesList.indexWhere((t) => t['id'] == _editingCallNoteTemplate!['id']);
+              if (idx != -1) {
+                _callNoteTemplatesList[idx] = templateData;
+              } else {
+                _callNoteTemplatesList.add(templateData);
+              }
+            } else {
+              _callNoteTemplatesList.add(templateData);
+            }
+            _isCreatingCallNoteTemplate = false;
+            _editingCallNoteTemplate = null;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Template "${templateData['title']}" saved successfully!'),
+              backgroundColor: const Color(0xFF10B981),
+            ),
+          );
+        },
+      );
+    }
+
+    final filteredTemplates = _callNoteTemplatesList.where((t) {
+      final titleQuery = _searchTemplateTitleCtrl.text.toLowerCase().trim();
+      final dateQuery = _searchTemplateDateCtrl.text.toLowerCase().trim();
+
+      if (titleQuery.isNotEmpty && !(t['title'] ?? '').toString().toLowerCase().contains(titleQuery)) {
+        return false;
+      }
+      if (dateQuery.isNotEmpty && !(t['modifiedOn'] ?? '').toString().toLowerCase().contains(dateQuery)) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    filteredTemplates.sort((a, b) {
+      final titleA = (a['title'] ?? '').toString().toLowerCase();
+      final titleB = (b['title'] ?? '').toString().toLowerCase();
+      return _sortTemplateAscending ? titleA.compareTo(titleB) : titleB.compareTo(titleA);
+    });
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Top Header Section
+          Padding(
+            padding: const EdgeInsets.only(left: 20, right: 20, top: 18, bottom: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Call Note Templates',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E293B),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: Text(t['content']!, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4)),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: AppColors.primarySubtle, borderRadius: BorderRadius.circular(12)),
-                    child: Text(t['tag']!, style: const TextStyle(fontSize: 10.5, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Padding(
+                      padding: EdgeInsets.only(top: 1),
+                      child: Icon(Icons.info_outline_rounded, size: 15, color: Color(0xFFF59E0B)),
+                    ),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'You can create, edit and delete Call Note Templates for your employees, and they can access them through the Callyzer Biz app.',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+          // Toolbar Row (Create New Template + Show 50)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _editingCallNoteTemplate = null;
+                      _isCreatingCallNoteTemplate = true;
+                    });
+                  },
+                  icon: const Icon(Icons.add, size: 16, color: Colors.white),
+                  label: const Text(
+                    'Create New Template',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
-                  Row(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF59E0B),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    elevation: 0,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Text('Show', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                    color: Colors.white,
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<int>(
+                      value: _templatesPageSize,
+                      isDense: true,
+                      icon: const Icon(Icons.arrow_drop_down, size: 20, color: Color(0xFF64748B)),
+                      items: [10, 25, 50, 100].map((int val) {
+                        return DropdownMenuItem<int>(
+                          value: val,
+                          child: Text('$val', style: const TextStyle(fontSize: 13, color: Color(0xFF334155))),
+                        );
+                      }).toList(),
+                      onChanged: (newVal) {
+                        if (newVal != null) {
+                          setState(() {
+                            _templatesPageSize = newVal;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Double Header Table + Rows
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const double minTableWidth = 750;
+              final double actualWidth = constraints.maxWidth > minTableWidth ? constraints.maxWidth : minTableWidth;
+              const double selectWidth = 70;
+              const double modifiedWidth = 260;
+              const double actionWidth = 80;
+
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: actualWidth,
+                  child: Column(
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.copy_rounded, size: 15, color: AppColors.textMuted),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
-                        splashRadius: 14,
-                        tooltip: 'Copy template text',
-                        onPressed: () {},
+                      // Header Row 1: Titles
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF8FAFC),
+                          border: Border(
+                            top: BorderSide(color: Color(0xFFE2E8F0)),
+                            bottom: BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: selectWidth,
+                              child: const Text('Select', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                            ),
+                            Expanded(
+                              child: InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _sortTemplateAscending = !_sortTemplateAscending;
+                                  });
+                                },
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('Title', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      _sortTemplateAscending ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
+                                      size: 18,
+                                      color: const Color(0xFF64748B),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: modifiedWidth,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Text('Modified On', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                                  SizedBox(width: 4),
+                                  Icon(Icons.arrow_drop_down_rounded, size: 18, color: Color(0xFF64748B)),
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                              width: actionWidth,
+                              child: const Center(
+                                child: Text('Action', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined, size: 15, color: AppColors.textMuted),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
-                        splashRadius: 14,
-                        onPressed: () {},
+
+                      // Header Row 2: Search Filters
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+                        ),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: selectWidth,
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectAllTemplates = !_selectAllTemplates;
+                                      if (_selectAllTemplates) {
+                                        _selectedTemplateIds.addAll(filteredTemplates.map((t) => t['id'] as int));
+                                      } else {
+                                        _selectedTemplateIds.clear();
+                                      }
+                                    });
+                                  },
+                                  child: Container(
+                                    width: 17,
+                                    height: 17,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(
+                                        color: const Color(0xFFF59E0B),
+                                        width: 1.5,
+                                      ),
+                                      color: _selectAllTemplates ? const Color(0xFFF59E0B) : Colors.white,
+                                    ),
+                                    child: _selectAllTemplates
+                                        ? const Icon(Icons.check, size: 13, color: Colors.white)
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: _filterInput(_searchTemplateTitleCtrl, 'Search'),
+                            ),
+                            SizedBox(
+                              width: modifiedWidth,
+                              child: Container(
+                                height: 30,
+                                margin: const EdgeInsets.only(right: 10),
+                                child: TextField(
+                                  controller: _searchTemplateDateCtrl,
+                                  readOnly: true,
+                                  onTap: () async {
+                                    final picked = await showDatePicker(
+                                      context: context,
+                                      initialDate: DateTime.now(),
+                                      firstDate: DateTime(2020),
+                                      lastDate: DateTime(2030),
+                                    );
+                                    if (picked != null) {
+                                      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                      final str = '${picked.day.toString().padLeft(2, '0')} ${months[picked.month - 1]} ${picked.year}';
+                                      setState(() {
+                                        _searchTemplateDateCtrl.text = str;
+                                      });
+                                    }
+                                  },
+                                  style: const TextStyle(fontSize: 11),
+                                  decoration: InputDecoration(
+                                    hintText: 'Select Date(s)',
+                                    hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                    suffixIcon: const Icon(Icons.calendar_today_outlined, size: 13, color: Color(0xFF94A3B8)),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                      borderSide: const BorderSide(color: Color(0xFFF59E0B)),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: actionWidth,
+                              child: (_searchTemplateTitleCtrl.text.isNotEmpty || _searchTemplateDateCtrl.text.isNotEmpty)
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear_rounded, size: 16, color: Color(0xFF94A3B8)),
+                                      tooltip: 'Clear filters',
+                                      onPressed: () {
+                                        setState(() {
+                                          _searchTemplateTitleCtrl.clear();
+                                          _searchTemplateDateCtrl.clear();
+                                        });
+                                      },
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
                       ),
+
+                      // Body Rows
+                      if (filteredTemplates.isEmpty)
+                        Container(
+                          width: actualWidth,
+                          padding: const EdgeInsets.symmetric(vertical: 38, horizontal: 24),
+                          alignment: Alignment.center,
+                          child: Text(
+                            (_searchTemplateTitleCtrl.text.isNotEmpty || _searchTemplateDateCtrl.text.isNotEmpty)
+                                ? 'No templates found matching search.'
+                                : 'Not any call note templates registered yet',
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF475569),
+                            ),
+                          ),
+                        )
+                      else
+                        for (int i = 0; i < filteredTemplates.length; i++) ...[
+                          _buildCallNoteTemplateRow(filteredTemplates[i], selectWidth, modifiedWidth, actionWidth),
+                          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                        ],
                     ],
                   ),
+                ),
+              );
+            },
+          ),
+
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+          // Bottom Pagination Bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  filteredTemplates.isEmpty ? '0 - 0 of 0' : '1 - ${filteredTemplates.length} of ${filteredTemplates.length}',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left_rounded, size: 20, color: Color(0xFF64748B)),
+                      onPressed: () {},
+                      splashRadius: 18,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFF64748B)),
+                      onPressed: () {},
+                      splashRadius: 18,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCallNoteTemplateRow(Map<String, dynamic> template, double selectWidth, double modifiedWidth, double actionWidth) {
+    final templateId = template['id'] as int;
+    final isSelected = _selectedTemplateIds.contains(templateId);
+
+    return Container(
+      color: isSelected ? const Color(0xFFFFFBEB) : Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      child: Row(
+        children: [
+          // Select Checkbox
+          SizedBox(
+            width: selectWidth,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    if (isSelected) {
+                      _selectedTemplateIds.remove(templateId);
+                    } else {
+                      _selectedTemplateIds.add(templateId);
+                    }
+                  });
+                },
+                child: Container(
+                  width: 17,
+                  height: 17,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: const Color(0xFFF59E0B),
+                      width: 1.5,
+                    ),
+                    color: isSelected ? const Color(0xFFF59E0B) : Colors.white,
+                  ),
+                  child: isSelected
+                      ? const Icon(Icons.check, size: 13, color: Colors.white)
+                      : null,
+                ),
+              ),
+            ),
+          ),
+
+          // Title
+          Expanded(
+            child: Text(
+              template['title'] ?? '',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF0F172A),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+
+          // Modified On
+          SizedBox(
+            width: modifiedWidth,
+            child: Text(
+              template['modifiedOn'] ?? '',
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF64748B),
+              ),
+            ),
+          ),
+
+          // Action Popup Menu
+          SizedBox(
+            width: actionWidth,
+            child: Center(
+              child: PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert_rounded, size: 18, color: Color(0xFF94A3B8)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                elevation: 3,
+                onSelected: (val) {
+                  if (val == 'edit') {
+                    setState(() {
+                      _editingCallNoteTemplate = template;
+                      _isCreatingCallNoteTemplate = true;
+                    });
+                  } else if (val == 'delete') {
+                    setState(() {
+                      _callNoteTemplatesList.removeWhere((item) => item['id'] == templateId);
+                      _selectedTemplateIds.remove(templateId);
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Template "${template['title']}" deleted.')),
+                    );
+                  }
+                },
+                itemBuilder: (ctx) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined, size: 16, color: Color(0xFF64748B)),
+                        SizedBox(width: 8),
+                        Text('Edit', style: TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
+                        SizedBox(width: 8),
+                        Text('Delete', style: TextStyle(fontSize: 13, color: Color(0xFFDC2626))),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -2010,167 +2978,63 @@ class _ManageScreenState extends State<ManageScreen> {
 
   // Dialog helpers
 
-  void _showAddExcludeNumberDialog(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    final numberCtrl = TextEditingController();
-
+  void _showAddExcludeNumberDialog(BuildContext context, {Map<String, dynamic>? prefilledEmployee}) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Row(
-          children: [
-            Icon(Icons.person_add_alt_outlined, color: Color(0xFFF97316)),
-            SizedBox(width: 8),
-            Text('Add Exclude Phone Number', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: SizedBox(
-          width: 440,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'The number added here will be automatically excluded from all calling reports.',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+      barrierDismissible: true,
+      builder: (ctx) => AddExcludePhoneDialog(
+        employeeRoster: _employeeRoster,
+        onAddNumbers: (newItems) {
+          setState(() {
+            int addedCount = 0;
+            for (final item in newItems) {
+              final phone = item['contactNumber']?.toString().replaceAll(RegExp(r'\s+'), '') ?? '';
+              final exists = _excludedNumbersList.any((e) =>
+                  e['contactNumber']?.toString().replaceAll(RegExp(r'\s+'), '') == phone);
+              if (!exists) {
+                _excludedNumbersList.add(item);
+                addedCount++;
+              }
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('$addedCount phone number(s) added to exclusion list.'),
+                backgroundColor: const Color(0xFF10B981),
+                behavior: SnackBarBehavior.floating,
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Contact Name',
-                  hintText: 'e.g. CEO Personal Line',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: numberCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Contact Number',
-                  hintText: 'e.g. +91 99999 00001',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              final name = nameCtrl.text.trim();
-              final phone = numberCtrl.text.trim();
-              if (phone.isEmpty) return;
-
-              setState(() {
-                _excludedNumbersList.add({
-                  'id': DateTime.now().millisecondsSinceEpoch,
-                  'contactName': name.isEmpty ? 'Excluded Contact' : name,
-                  'contactNumber': phone,
-                });
-              });
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Phone number added to exclusion list.'),
-                  backgroundColor: Color(0xFF10B981),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFF97316),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Add Number'),
-          ),
-        ],
+            );
+          });
+        },
       ),
     );
   }
 
   void _showImportExcludeNumbersDialog(BuildContext context) {
-    final bulkCtrl = TextEditingController();
-
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Row(
-          children: [
-            Icon(Icons.download_rounded, color: Color(0xFFF97316)),
-            SizedBox(width: 8),
-            Text('Import Exclude Phone Numbers', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: SizedBox(
-          width: 480,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Enter phone numbers to exclude (one per line, format: "Name, Number" or just "Number").',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: bulkCtrl,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  hintText: 'CEO Personal, +91 99999 00001\nTesting Device, +91 98888 11112\n+91 97777 22223',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              final raw = bulkCtrl.text.trim();
-              if (raw.isNotEmpty) {
-                final lines = raw.split('\n');
-                int count = 0;
-                setState(() {
-                  for (final line in lines) {
-                    final trimmed = line.trim();
-                    if (trimmed.isEmpty) continue;
-                    if (trimmed.contains(',')) {
-                      final parts = trimmed.split(',');
-                      _excludedNumbersList.add({
-                        'id': DateTime.now().millisecondsSinceEpoch + count,
-                        'contactName': parts[0].trim(),
-                        'contactNumber': parts.sublist(1).join(',').trim(),
-                      });
-                    } else {
-                      _excludedNumbersList.add({
-                        'id': DateTime.now().millisecondsSinceEpoch + count,
-                        'contactName': 'Bulk Excluded',
-                        'contactNumber': trimmed,
-                      });
-                    }
-                    count++;
-                  }
-                });
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('$count numbers imported into exclusion list.'),
-                    backgroundColor: const Color(0xFF10B981),
-                  ),
-                );
+      barrierDismissible: true,
+      builder: (ctx) => ImportExcludePhoneDialog(
+        onImportComplete: (importedItems) {
+          setState(() {
+            int addedCount = 0;
+            for (final item in importedItems) {
+              final phone = item['contactNumber']?.toString().replaceAll(RegExp(r'\s+'), '') ?? '';
+              final exists = _excludedNumbersList.any((e) =>
+                  e['contactNumber']?.toString().replaceAll(RegExp(r'\s+'), '') == phone);
+              if (!exists) {
+                _excludedNumbersList.add(item);
+                addedCount++;
               }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFF97316),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Import Now'),
-          ),
-        ],
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('$addedCount phone number(s) successfully imported into exclusion list!'),
+                backgroundColor: const Color(0xFF10B981),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          });
+        },
       ),
     );
   }
@@ -2228,37 +3092,7 @@ class _ManageScreenState extends State<ManageScreen> {
     );
   }
 
-  void _showAddUserDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Invite Web Dashboard User'),
-        content: SizedBox(
-          width: 400,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(decoration: InputDecoration(labelText: 'User Email', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
-              const SizedBox(height: 12),
-              TextField(decoration: InputDecoration(labelText: 'Role (Admin / Manager / Viewer)', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invitation email sent.')));
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-            child: const Text('Send Invitation'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   void _showAddTemplateDialog(BuildContext context, String templateType) {
     showDialog(
