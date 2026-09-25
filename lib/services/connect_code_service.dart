@@ -98,6 +98,8 @@ class ConnectCodeService {
     required String name,
     required String phone,
     String? companyName,
+    int employeeLimit = 5,
+    String teamSize = '1 - 5 Employees',
   }) async {
     try {
       // 1. Check if user with this phone already exists
@@ -142,6 +144,8 @@ class ConnectCodeService {
         'phone': phone.trim(),
         'companyName': companyName ?? 'Takse Call Enterprise',
         'connectCode': newCode,
+        'employeeLimit': employeeLimit,
+        'teamSize': teamSize,
         'role': 'Super Admin',
         'createdAt': now,
         'updatedAt': now,

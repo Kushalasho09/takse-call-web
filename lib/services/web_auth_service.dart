@@ -106,6 +106,8 @@ class WebAuthService {
     required String name,
     required String phone,
     String? companyName,
+    int employeeLimit = 5,
+    String teamSize = '1 - 5 Employees',
   }) async {
     // 1. Check if user already exists in Firestore for this phone
     final existingUser = await findUserByPhone(phone);
@@ -129,6 +131,8 @@ class WebAuthService {
           name: finalName,
           phone: phone,
           companyName: finalCompany,
+          employeeLimit: employeeLimit,
+          teamSize: teamSize,
         );
       }
     } else {
@@ -145,6 +149,8 @@ class WebAuthService {
         name: finalName,
         phone: phone,
         companyName: finalCompany,
+        employeeLimit: employeeLimit,
+        teamSize: teamSize,
       );
     }
 

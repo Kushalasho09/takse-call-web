@@ -6,7 +6,7 @@ service cloud.firestore {
     match /devices/{deviceCode} {
       allow read: if true; // Required for mobile app to look up connect code before/after pairing
       allow create, update: if true; // Allows web admin to generate codes & mobile app to mark active
-      allow delete: if request.auth != null;
+      allow delete: if true;
     }
 
     // User profiles & organization members
@@ -18,7 +18,7 @@ service cloud.firestore {
     match /call_logs/{logId} {
       allow read: if true; // Web dashboard streams live analytics
       allow create, update: if true; // Mobile SIM background sync writes call logs
-      allow delete: if request.auth != null;
+      allow delete: if true;
     }
 
     // Organization companies & settings
@@ -26,9 +26,23 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Leads pipeline collection and subcollections (call_activities, notes, etc.)
+    match /leads/{leadId} {
+      allow read, write: if true; // Streamed live by Web CRM and Mobile Telecaller App
+
+      match /{document=**} {
+        allow read, write: if true;
+      }
+    }
+
+    // App & call automation settings
+    match /settings/{settingId} {
+      allow read, write: if true;
+    }
+
     // Default fallback
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
   }
 }

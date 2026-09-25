@@ -200,6 +200,7 @@ class SubSectionNavBar extends StatelessWidget {
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
+                              key: ValueKey('nav_sub_${sub.id}'),
                               borderRadius: BorderRadius.circular(8),
                               onTap: () => onSubItemSelected(sub.id),
                               child: AnimatedContainer(

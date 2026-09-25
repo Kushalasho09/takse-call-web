@@ -22,6 +22,7 @@ class _WebLoginScreenState extends State<WebLoginScreen> {
 
   bool _isLoginMode = true; // Default to Login tab
   String _countryCode = '+91';
+  String _teamSize = '1 - 5 Employees (Starter)';
   bool _isOtpSent = false;
   bool _isLoading = false;
   bool _isCheckingPhone = false;
@@ -195,11 +196,22 @@ class _WebLoginScreenState extends State<WebLoginScreen> {
     final companyToUse = _foundAccount?['companyName'] ?? (_companyController.text.trim().isNotEmpty ? _companyController.text.trim() : 'Takse Call Enterprise');
 
     try {
+      int limit = 5;
+      if (_teamSize.contains('6 - 10')) {
+        limit = 10;
+      } else if (_teamSize.contains('11 - 25')) {
+        limit = 25;
+      } else if (_teamSize.contains('25+')) {
+        limit = 50;
+      }
+
       final user = await WebAuthService.verifyOtpAndLogin(
         otp: otp,
         name: nameToUse,
         phone: fullPhone,
         companyName: companyToUse,
+        employeeLimit: limit,
+        teamSize: _teamSize,
       );
 
       if (!mounted) return;
@@ -982,6 +994,36 @@ class _WebLoginScreenState extends State<WebLoginScreen> {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                     validator: (val) => val == null || val.trim().isEmpty ? 'Please enter organization name' : null,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  const Text('Number of Employees / Telecallers', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                  const SizedBox(height: 6),
+                  Container(
+                    height: 48,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.scaffoldBackground,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _teamSize,
+                        isExpanded: true,
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
+                        items: const [
+                          DropdownMenuItem(value: '1 - 5 Employees (Starter)', child: Text('👥 1 - 5 Employees (Starter Plan)')),
+                          DropdownMenuItem(value: '6 - 10 Employees (Growth)', child: Text('👥 6 - 10 Employees (Growth Plan)')),
+                          DropdownMenuItem(value: '11 - 25 Employees (Pro)', child: Text('👥 11 - 25 Employees (Pro Plan)')),
+                          DropdownMenuItem(value: '25+ Employees (Enterprise)', child: Text('🏢 25+ Employees (Enterprise Plan)')),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) setState(() => _teamSize = val);
+                        },
+                      ),
+                    ),
                   ),
                 ],
 

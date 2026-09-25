@@ -1,0 +1,121 @@
+================================================================================
+                    TAKSE CALL - TESTING STEPS GUIDE
+================================================================================
+
+YOUR TEST CSV FILE:
+/Volumes/SSD/kushal_flutter/Takse Call/takse_call_leads_sample.csv
+(Contains: kushal | Phone: 9978217711 | Status: Positive | Company: Takse Enterprises)
+
+================================================================================
+PART 1: TEST CSV IMPORT ON WEB (CONNECTS TO BACKEND FIRESTORE)
+================================================================================
+
+1. START THE WEB APP:
+   - Open terminal:
+     cd "/Volumes/SSD/kushal_flutter/Takse Call/takse_call_web"
+   - Run in Chrome:
+     flutter run -d chrome
+
+2. GO TO IMPORT LEADS:
+   - In left menu, click "Leads".
+   - In top sub-bar, click "Import Leads".
+
+3. SELECT OR LOAD CSV (Step 1):
+   - Option A: Click [Load Sample CSV (kushal - 9978217711)] (Instant 1-Click)
+   - Option B: Click [Select File] and choose:
+     /Volumes/SSD/kushal_flutter/Takse Call/takse_call_leads_sample.csv
+   - Click [Next: Map Fields ->].
+
+4. MAP & VALIDATE (Step 2 & Step 3):
+   - On Step 2 (Map Fields): Click [Next: Validate CSV Data ->].
+   - On Step 3 (Validate):
+     Verify Row 1 displays:
+     Name: kushal (Target Lead)
+     Phone: 9978217711
+     Company: Takse Enterprises
+     Status: Pass
+   - Click [Next: Actions & Duplicate Rules ->].
+
+5. CONFIRM & IMPORT TO BACKEND (Step 4 & Step 5):
+   - On Step 4 (Actions): Click [Review Summary & Import ->].
+   - On Step 5 (Summary): Click the green button [Confirm & Complete Import].
+   - RESULT: All leads are saved directly into Firebase Cloud Firestore!
+
+================================================================================
+PART 2: TEST ON MOBILE APP (ANDROID PHONE)
+================================================================================
+
+1. START THE MOBILE APP:
+   - Connect your Android phone with USB Debugging enabled.
+   - Open terminal:
+     cd "/Volumes/SSD/kushal_flutter/Takse Call/takse_call_app"
+   - Run on your device:
+     flutter run
+
+2. ENABLE OVERLAY PERMISSION (One-Time Setup):
+   - In the app, tap "Call History" tab.
+   - At the top, see the banner "Display Over Other Apps" -> Tap [Enable].
+   - Turn toggle ON for "Allow display over other apps" (or "Appear on top").
+   - Press Back button to return to app.
+
+3. VERIFY IMPORTED LEAD IN APP:
+   - Tap "My Leads" tab at the bottom.
+   - You will see "kushal" (9978217711) at the top of your leads list with:
+     * Name: kushal
+     * Number: 9978217711
+     * Company: Takse Enterprises
+     * Status: Positive
+
+4. MAKE A CALL & TEST POST-CALL DIALOG:
+   - On Kushal's lead card, tap the green Call icon.
+   - Your phone will dial 9978217711.
+   - Cut / End the call.
+   - You land back on your normal phone system dialer.
+   - The native floating popup dialog immediately appears on top of your dialer!
+   - Dialog shows:
+     * Caller: kushal
+     * Phone: 9978217711
+     * 4 Status options: Positive, Call Back, Negative, Not Pickup Call
+     * Add Note field
+     * 3 Buttons: [Save & Exit], [Save & Connect], [Save & Add Lead]
+
+5. UPDATE STATUS & SAVE:
+   - Tap "Positive" (or "Call Back" and pick date/time).
+   - Type note: "Interested in demo".
+   - Tap [Save & Exit].
+   - The dialog closes smoothly and saves to Firestore backend.
+
+================================================================================
+PART 3: VERIFY REAL-TIME LIVE SYNC ON WEB
+================================================================================
+
+1. Look back at your Web browser screen (Leads -> My Leads):
+   - The lead row for "kushal" updates INSTANTLY with your new status and notes.
+   - No browser refresh needed!
+
+================================================================================
+PART 4: TEST GOOGLE SHEETS & EXCEL CONNECTOR (API KEY & DIRECT SYNC)
+================================================================================
+
+1. OPEN CONNECTORS HUB ON WEB:
+   - In left menu, click "Leads".
+   - In top sub-bar, click "Import Leads".
+   - Click the "Automated Connectors Hub" tab.
+   - Click the first card: "Google Sheet (Import Leads)".
+
+2. CONFIGURE GOOGLE SHEET:
+   - Sheet URL: Paste your Google Sheet URL (or leave default test sheet).
+   - Google Cloud API Key (Optional): Enter your GCP API Key if private/restricted, 
+     OR leave blank if sheet sharing is set to "Anyone with the link can view".
+   - Sheet Range: e.g. Sheet1!A1:Z500
+   - Routing: Choose Round-Robin or Single Dedicated Telecaller.
+
+3. TEST & IMPORT:
+   - Click [Test Connection & Preview Sheet Rows]:
+     -> Live status fetches and displays row count and headers preview.
+   - Click [Import & Sync to Pipeline]:
+     -> Leads are automatically converted, assigned to telecallers, and saved
+        directly into Cloud Firestore and your live My Leads table!
+
+================================================================================
+
