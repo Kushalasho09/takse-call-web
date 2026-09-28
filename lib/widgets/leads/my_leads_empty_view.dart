@@ -222,7 +222,7 @@ class MyLeadsEmptyView extends StatelessWidget {
                 fontFamily: 'sans-serif',
               ),
               children: [
-                TextSpan(text: 'You can add Bulk Leads in CSV Format. To add bulk leads on Callyzer, click on the '),
+                TextSpan(text: 'You can add Bulk Leads in CSV Format. To add bulk leads on Takse Call, click on the '),
                 TextSpan(
                   text: "'Import Leads'",
                   style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
@@ -310,151 +310,42 @@ class MyLeadsEmptyView extends StatelessWidget {
         ),
         const SizedBox(height: 12),
 
-        // Video Thumbnail Banner matching screenshot
+        // Video Thumbnail Banner with Generated Takse Call Banner
         InkWell(
           onTap: () => _showTutorialDialog(context),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           child: Container(
             height: 220,
             width: double.infinity,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              gradient: const LinearGradient(
-                colors: [Color(0xFFE2E8F0), Color(0xFFF8FAFC), Color(0xFFFFFFFF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: const [
-                BoxShadow(color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 3)),
+                BoxShadow(color: Color(0x10000000), blurRadius: 10, offset: Offset(0, 4)),
               ],
             ),
+            clipBehavior: Clip.antiAlias,
             child: Stack(
+              fit: StackFit.expand,
               children: [
-                // Keyboard background styling elements
-                Positioned(
-                  left: -10,
-                  top: 10,
-                  bottom: 10,
-                  width: 140,
-                  child: Opacity(
-                    opacity: 0.35,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFCBD5E1)),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.keyboard_outlined, size: 70, color: Color(0xFF94A3B8)),
-                      ),
-                    ),
-                  ),
+                Image.asset(
+                  'assets/images/takse_bulk_leads_banner.jpg',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.network(
+                      'assets/images/takse_bulk_leads_banner.jpg',
+                      fit: BoxFit.cover,
+                      errorBuilder: (ctx, err, st) => _buildFallbackBanner(),
+                    );
+                  },
                 ),
-
-                // Yellow Enter pointer arrow
-                Positioned(
-                  left: 105,
-                  top: 90,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    child: const Icon(
-                      Icons.arrow_upward_rounded,
-                      color: Color(0xFFF59E0B),
-                      size: 48,
-                    ),
-                  ),
-                ),
-
-                // Main headline text
-                Positioned(
-                  top: 28,
-                  left: 140,
-                  right: 20,
-                  child: Column(
-                    children: const [
-                      Text(
-                        'How To Import Bulk Leads',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF0F172A),
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      SizedBox(height: 6),
-                      Text(
-                        'In- CALLYZER',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF1E293B),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Play Button icon in the center
-                Center(
-                  child: Container(
-                    width: 52,
-                    height: 52,
-                    margin: const EdgeInsets.only(top: 24),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFBBF24),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.play_arrow_rounded,
-                      color: Colors.white,
-                      size: 34,
-                    ),
-                  ),
-                ),
-
-                // Bottom Right Callyzer Logo Emblem
-                Positioned(
-                  bottom: 14,
-                  right: 18,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.phone_in_talk_rounded, color: Color(0xFF0F172A), size: 16),
-                            SizedBox(width: 2),
-                            Icon(Icons.bar_chart_rounded, color: Color(0xFFF59E0B), size: 16),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'Callyzer',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF334155),
-                        ),
-                      ),
-                    ],
+                // Subtle hover overlay
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _showTutorialDialog(context),
+                    hoverColor: Colors.black.withValues(alpha: 0.05),
+                    splashColor: const Color(0xFFF59E0B).withValues(alpha: 0.15),
                   ),
                 ),
               ],
@@ -462,6 +353,31 @@ class MyLeadsEmptyView extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFallbackBanner() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF1E3A8A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.play_circle_fill_rounded, size: 54, color: Color(0xFFF59E0B)),
+            SizedBox(height: 10),
+            Text(
+              'How To Import Bulk Leads in Takse Call',
+              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

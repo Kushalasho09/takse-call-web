@@ -37,8 +37,7 @@ void main() {
     expect(find.text('Import Leads'), findsOneWidget);
     expect(find.text('How To Import Bulk Leads? '), findsOneWidget);
     expect(find.text('Click Here'), findsOneWidget);
-    expect(find.text('How To Import Bulk Leads'), findsOneWidget);
-    expect(find.text('In- CALLYZER'), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
 
     await tester.tap(find.text('Add Lead'));
     expect(addLeadClicked, isTrue);
