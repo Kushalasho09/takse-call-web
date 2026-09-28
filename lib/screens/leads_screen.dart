@@ -43,7 +43,7 @@ class _LeadsScreenState extends State<LeadsScreen> {
   final List<LeadTagModel> _tags = LeadTagModel.initialTags();
   final List<LeadStatusModel> _statuses = LeadStatusModel.initialStatuses();
   List<FormFieldSettingModel> _formFields = FormFieldSettingModel.initialFields();
-  MyLeadsMode _myLeadsMode = MyLeadsMode.table;
+  MyLeadsMode _myLeadsMode = MyLeadsMode.empty;
   StreamSubscription<List<LeadItem>>? _leadsSubscription;
 
   @override
@@ -54,25 +54,26 @@ class _LeadsScreenState extends State<LeadsScreen> {
       _leads.addAll(widget.initialLeads!);
       _isLoadingLeads = false;
       _myLeadsMode = _leads.isEmpty ? MyLeadsMode.empty : MyLeadsMode.table;
-    }
-    try {
-      _leadsSubscription = WebLeadFirestoreService.streamLeads().listen((updatedLeads) {
-        if (mounted) {
-          setState(() {
-            _isLoadingLeads = false;
-            _leads
-              ..clear()
-              ..addAll(updatedLeads);
-            if (_leads.isEmpty && _myLeadsMode == MyLeadsMode.table) {
-              _myLeadsMode = MyLeadsMode.empty;
-            } else if (_leads.isNotEmpty && _myLeadsMode == MyLeadsMode.empty) {
-              _myLeadsMode = MyLeadsMode.table;
-            }
-          });
-        }
-      });
-    } catch (_) {
-      if (mounted) setState(() => _isLoadingLeads = false);
+    } else {
+      try {
+        _leadsSubscription = WebLeadFirestoreService.streamLeads().listen((updatedLeads) {
+          if (mounted) {
+            setState(() {
+              _isLoadingLeads = false;
+              _leads
+                ..clear()
+                ..addAll(updatedLeads);
+              if (_leads.isEmpty && _myLeadsMode == MyLeadsMode.table) {
+                _myLeadsMode = MyLeadsMode.empty;
+              } else if (_leads.isNotEmpty && _myLeadsMode == MyLeadsMode.empty) {
+                _myLeadsMode = MyLeadsMode.table;
+              }
+            });
+          }
+        });
+      } catch (_) {
+        if (mounted) setState(() => _isLoadingLeads = false);
+      }
     }
   }
 

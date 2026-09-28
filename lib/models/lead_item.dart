@@ -26,6 +26,8 @@ class CallActivityItem {
 
 class LeadItem {
   final String id;
+  final String? connectCode;
+  final String? userId;
   final int srNo;
   final int leadNumber;
   final String name;
@@ -65,6 +67,8 @@ class LeadItem {
 
   LeadItem({
     required this.id,
+    this.connectCode,
+    this.userId,
     required this.srNo,
     int? leadNumber,
     required this.name,
@@ -107,6 +111,8 @@ class LeadItem {
 
   LeadItem copyWith({
     String? id,
+    String? connectCode,
+    String? userId,
     int? srNo,
     int? leadNumber,
     String? name,
@@ -146,6 +152,8 @@ class LeadItem {
   }) {
     return LeadItem(
       id: id ?? this.id,
+      connectCode: connectCode ?? this.connectCode,
+      userId: userId ?? this.userId,
       srNo: srNo ?? this.srNo,
       leadNumber: leadNumber ?? this.leadNumber,
       name: name ?? this.name,
@@ -195,6 +203,8 @@ class LeadItem {
 
     return LeadItem(
       id: docId,
+      connectCode: data['connectCode']?.toString(),
+      userId: data['userId']?.toString(),
       srNo: index + 1,
       leadNumber: index + 1,
       name: data['name'] ?? data['firstName'] ?? 'Lead',
@@ -225,6 +235,8 @@ class LeadItem {
   Map<String, dynamic> toFirestoreMap() {
     return {
       'id': id,
+      'connectCode': connectCode,
+      'userId': userId,
       'name': name,
       'phoneNumber': phone,
       'altPhone': altPhone,

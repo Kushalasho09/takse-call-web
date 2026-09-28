@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../services/web_auth_service.dart';
 import '../theme/app_colors.dart';
 import 'phone_mockup.dart';
 
 class RegisterEmployeeView extends StatefulWidget {
   final VoidCallback onBack;
-  final String connectCode;
+  final String? connectCode;
 
   const RegisterEmployeeView({
     super.key,
     required this.onBack,
-    this.connectCode = 'ASH-3426-0915',
+    this.connectCode,
   });
 
   @override
@@ -18,6 +19,10 @@ class RegisterEmployeeView extends StatefulWidget {
 }
 
 class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
+  String get _code => (widget.connectCode != null && widget.connectCode!.isNotEmpty)
+      ? widget.connectCode!
+      : (WebAuthService.currentUser?.connectCode ?? 'TAK-1000-2000');
+
   // Step 0 = Overview / Intro video, 1..8 = Steps 1 through 8
   int _currentStep = 0;
   String _selectedLanguage = 'English';
@@ -85,14 +90,14 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('Your Organization Device Connect Code', style: TextStyle(fontSize: 11, color: Color(0xFF92400E))),
-                        Text(widget.connectCode, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFFB45309), letterSpacing: 1.1)),
+                        Text(_code, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFFB45309), letterSpacing: 1.1)),
                       ],
                     ),
                     const Spacer(),
                     IconButton(
                       icon: const Icon(Icons.copy_rounded, color: Color(0xFFD97706)),
                       tooltip: 'Copy Code',
-                      onPressed: () => _copyToClipboard(widget.connectCode, 'Device connect code copied!'),
+                      onPressed: () => _copyToClipboard(_code, 'Device connect code copied!'),
                     ),
                   ],
                 ),
@@ -110,7 +115,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
                   border: Border.all(color: AppColors.border),
                 ),
                 child: SelectableText(
-                  'Hello team,\nPlease download the Callyzer / Takse Call Biz app from Google Play: https://play.google.com/store/apps/details?id=com.websoptimization.callyzerbiz\n\nWhen prompted, enter our organization connect code: ${widget.connectCode} and choose your official work SIM.',
+                  'Hello team,\nPlease download the Callyzer / Takse Call Biz app from Google Play: https://play.google.com/store/apps/details?id=com.websoptimization.callyzerbiz\n\nWhen prompted, enter our organization connect code: $_code and choose your official work SIM.',
                   style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.textPrimary),
                 ),
               ),
@@ -123,7 +128,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
             onPressed: () {
               Navigator.pop(ctx);
               _copyToClipboard(
-                'Hello team,\nPlease download the Callyzer / Takse Call Biz app from Google Play: https://play.google.com/store/apps/details?id=com.websoptimization.callyzerbiz\n\nWhen prompted, enter our organization connect code: ${widget.connectCode} and choose your official work SIM.',
+                'Hello team,\nPlease download the Callyzer / Takse Call Biz app from Google Play: https://play.google.com/store/apps/details?id=com.websoptimization.callyzerbiz\n\nWhen prompted, enter our organization connect code: $_code and choose your official work SIM.',
                 'Message template copied to clipboard!',
               );
             },
@@ -839,7 +844,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
                 type: PhoneMockupType.permissionContacts,
                 width: 230,
                 height: 460,
-                connectCode: widget.connectCode,
+                connectCode: _code,
               ),
               const SizedBox(width: 24),
 
@@ -848,7 +853,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
                 type: PhoneMockupType.permissionCallHistory,
                 width: 230,
                 height: 460,
-                connectCode: widget.connectCode,
+                connectCode: _code,
               ),
               const SizedBox(width: 24),
 
@@ -857,7 +862,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
                 type: PhoneMockupType.permissionNotifications,
                 width: 230,
                 height: 460,
-                connectCode: widget.connectCode,
+                connectCode: _code,
               ),
             ],
           ),
@@ -898,7 +903,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
                       children: [
                         const Text('The device connect code is', style: TextStyle(fontSize: 12, color: Color(0xFF92400E))),
                         Text(
-                          widget.connectCode,
+                          _code,
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
@@ -910,7 +915,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
                     ),
                     const Spacer(),
                     ElevatedButton.icon(
-                      onPressed: () => _copyToClipboard(widget.connectCode, 'Device code copied to clipboard!'),
+                      onPressed: () => _copyToClipboard(_code, 'Device code copied to clipboard!'),
                       icon: const Icon(Icons.copy_rounded, size: 14),
                       label: const Text('Copy Code'),
                       style: ElevatedButton.styleFrom(
@@ -959,7 +964,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
           type: PhoneMockupType.connectCode,
           width: 250,
           height: 480,
-          connectCode: widget.connectCode,
+          connectCode: _code,
         ),
       ],
     );
@@ -1024,7 +1029,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
           type: PhoneMockupType.selectSim,
           width: 250,
           height: 480,
-          connectCode: widget.connectCode,
+          connectCode: _code,
         ),
       ],
     );
@@ -1061,7 +1066,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
           type: PhoneMockupType.connectSimForm,
           width: 250,
           height: 480,
-          connectCode: widget.connectCode,
+          connectCode: _code,
         ),
       ],
     );
@@ -1133,7 +1138,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
           type: PhoneMockupType.verifyPhone,
           width: 250,
           height: 480,
-          connectCode: widget.connectCode,
+          connectCode: _code,
         ),
       ],
     );
@@ -1165,7 +1170,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
           type: PhoneMockupType.allowOverlap,
           width: 250,
           height: 480,
-          connectCode: widget.connectCode,
+          connectCode: _code,
         ),
       ],
     );
@@ -1220,7 +1225,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
           type: PhoneMockupType.allowAutoStart,
           width: 250,
           height: 480,
-          connectCode: widget.connectCode,
+          connectCode: _code,
         ),
       ],
     );

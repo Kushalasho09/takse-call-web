@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import '../models/nav_item.dart';
+import '../services/firestore_sync_service.dart';
+import '../services/web_auth_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/register_employee_view.dart';
 import '../widgets/sub_section_nav_bar.dart';
@@ -26,7 +30,8 @@ class ManageScreen extends StatefulWidget {
 class _ManageScreenState extends State<ManageScreen> {
   late String _selectedSubItem;
   bool _isRegisteringEmployee = false;
-  final String _deviceConnectCode = 'ASH-3426-0915';
+  String get _deviceConnectCode => WebAuthService.currentUser?.connectCode ?? 'TAK-1000-2000';
+  StreamSubscription<List<FirestoreDevice>>? _devicesSub;
 
   bool _showTrashedEmployees = false;
   bool _showEmployeesWithSyncIssue = false;
@@ -72,53 +77,16 @@ class _ManageScreenState extends State<ManageScreen> {
   bool _selectAllTemplates = false;
   late List<Map<String, dynamic>> _callNoteTemplatesList;
 
-  late List<Map<String, dynamic>> _employeeRoster;
+  List<Map<String, dynamic>> _employeeRoster = [];
 
   @override
   void initState() {
     super.initState();
     _selectedSubItem = widget.activeSubItemId ?? 'employees';
-    _employeeRoster = [
-      {
-        'id': 1,
-        'name': 'vishal',
-        'phone': '+91-8800719093',
-        'code': '',
-        'tags': <String>[],
-        'model': 'OPPO CPH2761',
-        'version': '2.17.2',
-        'registeredDate': '15 Sep 2026, 10:21 PM',
-        'lastCallTime': '16 Sep 2026, 04:47 PM',
-        'lastSyncTime': '16 Sep 2026, 05:14 PM',
-        'leadEnabled': false,
-        'recordingEnabled': true,
-        'hasWarning': true,
-        'isLocked': false, // green unlocked padlock
-        'isTrashed': false,
-        'hasSyncIssue': false,
-      },
-      {
-        'id': 2,
-        'name': 'kushal asodia',
-        'phone': '+91-9664579043',
-        'code': '',
-        'tags': <String>[],
-        'model': 'OPPO CPH2495',
-        'version': '2.17.2',
-        'registeredDate': '15 Sep 2026, 10:24 PM',
-        'lastCallTime': '15 Sep 2026, 10:24 PM',
-        'lastSyncTime': '16 Sep 2026, 04:41 PM',
-        'leadEnabled': false,
-        'recordingEnabled': true,
-        'hasWarning': true,
-        'isLocked': true, // red locked padlock
-        'isTrashed': false,
-        'hasSyncIssue': false,
-      },
-    ];
-
+    _employeeRoster = [];
     _excludedNumbersList = [];
     _usersList = [];
+    _listenToDevices();
     _callNoteTemplatesList = [
       {
         'id': 1,
@@ -153,8 +121,42 @@ class _ManageScreenState extends State<ManageScreen> {
     ];
   }
 
+  void _listenToDevices() {
+    _devicesSub?.cancel();
+    final code = _deviceConnectCode;
+    _devicesSub = FirestoreSyncService.streamDevices(filterConnectCode: code).listen((devices) {
+      if (!mounted) return;
+      setState(() {
+        _employeeRoster = devices.map((d) {
+          final syncStr = d.lastSyncAt != null
+              ? DateFormat('d MMM yyyy, hh:mm a').format(d.lastSyncAt!)
+              : 'Never synced';
+          return {
+            'id': d.connectCode.hashCode,
+            'name': d.userName,
+            'phone': d.userPhone,
+            'code': d.connectCode,
+            'tags': <String>[],
+            'model': d.deviceModel ?? 'Android Phone',
+            'version': '2.17.2',
+            'registeredDate': 'Active',
+            'lastCallTime': syncStr,
+            'lastSyncTime': syncStr,
+            'leadEnabled': true,
+            'recordingEnabled': true,
+            'hasWarning': false,
+            'isLocked': false,
+            'isTrashed': false,
+            'hasSyncIssue': false,
+          };
+        }).toList();
+      });
+    });
+  }
+
   @override
   void dispose() {
+    _devicesSub?.cancel();
     _searchEmployeeCtrl.dispose();
     _searchCodeCtrl.dispose();
     _searchTagCtrl.dispose();
@@ -505,7 +507,7 @@ class _ManageScreenState extends State<ManageScreen> {
                     children: [
                       const TextSpan(text: 'Total Employees : '),
                       TextSpan(
-                        text: '${filteredList.length} of 5',
+                        text: '${filteredList.length}',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -682,9 +684,48 @@ class _ManageScreenState extends State<ManageScreen> {
                   // Table Body Rows
                   if (filteredList.isEmpty)
                     Container(
-                      padding: const EdgeInsets.all(36),
+                      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
                       alignment: Alignment.center,
-                      child: const Text('No employees found matching filter.', style: TextStyle(color: AppColors.textSecondary)),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFFBEB),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFFFDE68A)),
+                            ),
+                            child: const Icon(Icons.group_add_rounded, size: 30, color: Color(0xFFD97706)),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            _employeeRoster.isEmpty ? 'No Employees Paired Yet' : 'No employees found matching filter',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            _employeeRoster.isEmpty
+                                ? 'Share your organization connect code ($_deviceConnectCode) with your team to pair their mobile devices.'
+                                : 'Try changing or clearing your search filters above.',
+                            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                          ),
+                          if (_employeeRoster.isEmpty) ...[
+                            const SizedBox(height: 16),
+                            OutlinedButton.icon(
+                              onPressed: () => setState(() => _isRegisteringEmployee = true),
+                              icon: const Icon(Icons.qr_code_rounded, size: 16, color: Color(0xFFF97316)),
+                              label: const Text('View Employee Setup Guide & Connect Code', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFF97316))),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFFF97316)),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     )
                   else
                     for (int i = 0; i < filteredList.length; i++) ...[

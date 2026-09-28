@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../models/lead_item.dart';
+import '../../services/firestore_sync_service.dart';
+import '../../services/web_auth_service.dart';
 
 class AddLeadFormView extends StatefulWidget {
   final VoidCallback onCancel;
@@ -53,18 +56,45 @@ class _AddLeadFormViewState extends State<AddLeadFormView> {
   ];
 
   bool _assignToSpecificEmployee = true;
-  String _selectedEmployee = 'kushal asodia (+91-9664579043)';
-  final List<String> _employeeList = [
-    'kushal asodia (+91-9664579043)',
-    'Rohan Sharma (+91-9876543210)',
-    'Amit Patel (+91-9822334455)',
-    'Priya Verma (+91-9712345678)',
-  ];
+  String _selectedEmployee = '';
+  List<String> _employeeList = [];
+  StreamSubscription<List<FirestoreDevice>>? _devicesSub;
 
   bool _mapAvailableCallLogs = true;
 
   @override
+  void initState() {
+    super.initState();
+    final user = WebAuthService.currentUser;
+    if (user != null) {
+      final initialItem = '${user.name} (${user.phone})';
+      _employeeList = [initialItem];
+      _selectedEmployee = initialItem;
+    }
+    _devicesSub = FirestoreSyncService.streamDevices().listen((devices) {
+      if (!mounted) return;
+      setState(() {
+        final list = <String>[];
+        if (user != null) {
+          list.add('${user.name} (${user.phone})');
+        }
+        for (var d in devices) {
+          final item = '${d.userName} (${d.userPhone})';
+          if (!list.contains(item)) {
+            list.add(item);
+          }
+        }
+        _employeeList = list;
+        if (!_employeeList.contains(_selectedEmployee) && _employeeList.isNotEmpty) {
+          _selectedEmployee = _employeeList.first;
+        }
+      });
+    });
+  }
+
+  @override
   void dispose() {
+    _devicesSub?.cancel();
     _firstNameCtrl.dispose();
     _lastNameCtrl.dispose();
     _phoneCtrl.dispose();
@@ -108,8 +138,9 @@ class _AddLeadFormViewState extends State<AddLeadFormView> {
       final todayStr = '${now.day} ${_monthName(now.month)} ${now.year}';
 
       // Parse employee info
-      String assignedName = 'kushal asodia';
-      String assignedPhone = '+91-9664579043';
+      final user = WebAuthService.currentUser;
+      String assignedName = user?.name ?? 'Admin';
+      String assignedPhone = user?.phone ?? '';
       if (_selectedEmployee.contains('(')) {
         final parts = _selectedEmployee.split('(');
         assignedName = parts[0].trim();
@@ -118,6 +149,8 @@ class _AddLeadFormViewState extends State<AddLeadFormView> {
 
       final newLead = LeadItem(
         id: 'lead_${DateTime.now().millisecondsSinceEpoch}',
+        connectCode: user?.connectCode,
+        userId: user?.uid,
         srNo: 1, // Will be re-indexed in list
         name: fullName.toLowerCase(),
         phone: fullPhone,

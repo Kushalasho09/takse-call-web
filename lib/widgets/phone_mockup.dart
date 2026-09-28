@@ -24,7 +24,7 @@ class PhoneMockup extends StatelessWidget {
     required this.type,
     this.width = 230,
     this.height = 460,
-    this.connectCode = 'ASH-3426-0915',
+    this.connectCode = 'TAK-1000-2000',
   });
 
   @override
@@ -388,7 +388,7 @@ class PhoneMockup extends StatelessWidget {
                 const Icon(Icons.vpn_key_rounded, size: 15, color: Color(0xFFD97706)),
                 const SizedBox(width: 6),
                 Text(
-                  connectCode ?? 'ASH-3426-0915',
+                  connectCode ?? 'TAK-1000-2000',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,

@@ -1,8 +1,11 @@
 // ignore_for_file: deprecated_member_use
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../models/lead_item.dart';
+import '../../services/firestore_sync_service.dart';
 import '../../services/google_sheets_service.dart';
+import '../../services/web_auth_service.dart';
 import '../../services/web_lead_firestore_service.dart';
 import '../../utils/csv_web_helper.dart';
 
@@ -52,18 +55,38 @@ class _ImportLeadsViewState extends State<ImportLeadsView> {
   String _duplicateStrategy = 'skip'; // 'skip', 'overwrite', 'allow'
   String _defaultStatus = 'Positive';
 
-  final List<String> _employeeList = [
-    'kushal asodia (+91-9664579043)',
-    'Rohan Sharma (+91-9876543210)',
-    'Amit Patel (+91-9822334455)',
-    'Priya Verma (+91-9712345678)',
-  ];
+  List<String> _employeeList = [];
+  StreamSubscription<List<FirestoreDevice>>? _devicesSub;
 
   @override
   void initState() {
     super.initState();
-    // Pre-populate with default sample leads so user can proceed immediately if desired
-    _parseCsvString(kDefaultSampleCsv, fileName: 'takse_call_leads_sample.csv', fileSize: utf8.encode(kDefaultSampleCsv).length);
+    final user = WebAuthService.currentUser;
+    if (user != null) {
+      _employeeList = ['${user.name} (${user.phone})'];
+    }
+    _devicesSub = FirestoreSyncService.streamDevices().listen((devices) {
+      if (!mounted) return;
+      setState(() {
+        final list = <String>[];
+        if (user != null) {
+          list.add('${user.name} (${user.phone})');
+        }
+        for (var d in devices) {
+          final item = '${d.userName} (${d.userPhone})';
+          if (!list.contains(item)) {
+            list.add(item);
+          }
+        }
+        _employeeList = list;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _devicesSub?.cancel();
+    super.dispose();
   }
 
   void _handleUploadCsv() {

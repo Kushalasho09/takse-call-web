@@ -104,13 +104,13 @@ class FirestoreSyncService {
   /// Stream real-time call logs for the logged-in user or their organization
   static Stream<List<WebCallLog>> streamCallLogs({String? filterConnectCode}) {
     final code = filterConnectCode ?? WebAuthService.currentUser?.connectCode;
-    
-    Query query = _firestore.collection('call_logs');
-    if (code != null && code.isNotEmpty) {
-      final cleanCode = code.replaceAll('-', '');
-      final codes = {code, cleanCode}.toList();
-      query = query.where('connectCode', whereIn: codes);
+    if (code == null || code.isEmpty) {
+      return Stream.value(<WebCallLog>[]);
     }
+    
+    final cleanCode = code.replaceAll('-', '');
+    final codes = {code, cleanCode}.toList();
+    final query = _firestore.collection('call_logs').where('connectCode', whereIn: codes);
     
     return query.snapshots().map((snapshot) {
       final list = snapshot.docs.map((doc) => WebCallLog.fromFirestore(doc)).toList();
@@ -122,9 +122,21 @@ class FirestoreSyncService {
     });
   }
 
-  /// Stream real-time connected employee devices
-  static Stream<List<FirestoreDevice>> streamDevices() {
-    return _firestore.collection('devices').snapshots().map((snapshot) {
+  /// Stream real-time connected employee devices for this organization
+  static Stream<List<FirestoreDevice>> streamDevices({String? filterConnectCode}) {
+    final code = filterConnectCode ?? WebAuthService.currentUser?.connectCode;
+    if (code == null || code.isEmpty) {
+      return Stream.value(<FirestoreDevice>[]);
+    }
+
+    final cleanCode = code.replaceAll('-', '');
+    final codes = {code, cleanCode}.toList();
+
+    return _firestore
+        .collection('devices')
+        .where('connectCode', whereIn: codes)
+        .snapshots()
+        .map((snapshot) {
       return snapshot.docs.map((doc) => FirestoreDevice.fromFirestore(doc)).toList();
     }).handleError((err) {
       debugPrint('Firestore streamDevices notice: $err');

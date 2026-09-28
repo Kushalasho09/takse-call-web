@@ -136,8 +136,8 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final user = WebAuthService.currentUser;
-    final currentUserName = user?.name ?? 'Rohan Sharma';
-    final currentDeviceCode = user?.connectCode ?? 'ROH-3453-2342';
+    final currentUserName = (user?.name != null && user!.name.isNotEmpty) ? user.name : 'Admin';
+    final currentDeviceCode = (user?.connectCode != null && user!.connectCode.isNotEmpty) ? user.connectCode : 'TAK-1000-2000';
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
