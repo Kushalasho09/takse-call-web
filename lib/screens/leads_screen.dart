@@ -5,6 +5,7 @@ import '../models/nav_item.dart';
 import '../services/web_lead_firestore_service.dart';
 import '../widgets/leads/add_lead_form_view.dart';
 import '../widgets/leads/import_leads_view.dart';
+import '../widgets/leads/lead_distribution_view.dart';
 import '../widgets/leads/lead_form_settings_view.dart';
 import '../widgets/leads/lead_reports_suite_views.dart';
 import '../widgets/leads/lead_status_view.dart';
@@ -197,6 +198,22 @@ class _LeadsScreenState extends State<LeadsScreen> {
     switch (_selectedSubItem) {
       case 'my_leads':
         return _buildMyLeadsView();
+      case 'lead_distribution':
+        return LeadDistributionView(
+          leads: _leads,
+          onRefresh: () async {
+            setState(() => _isLoadingLeads = true);
+            final updated = await WebLeadFirestoreService.streamLeads().first;
+            if (mounted) {
+              setState(() {
+                _isLoadingLeads = false;
+                _leads
+                  ..clear()
+                  ..addAll(updated);
+              });
+            }
+          },
+        );
       case 'import_leads':
         return ImportLeadsView(
           onCancel: () => _onSelect('my_leads'),

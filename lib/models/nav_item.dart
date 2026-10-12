@@ -49,6 +49,7 @@ class NavMenuData {
 
   static const List<NavSubItem> leadsOptions = [
     NavSubItem(id: 'my_leads', title: 'My Leads', icon: Icons.person_pin_outlined),
+    NavSubItem(id: 'lead_distribution', title: 'Lead Distribution', icon: Icons.shuffle_rounded),
     NavSubItem(id: 'import_leads', title: 'Import Leads', icon: Icons.file_upload_outlined),
     NavSubItem(id: 'lead_reports', title: 'Lead Reports', icon: Icons.assessment_outlined),
     NavSubItem(id: 'status_report', title: 'Status Report', icon: Icons.pie_chart_outline_rounded),

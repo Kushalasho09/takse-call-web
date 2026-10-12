@@ -132,7 +132,7 @@ class _ManageScreenState extends State<ManageScreen> {
               ? DateFormat('d MMM yyyy, hh:mm a').format(d.lastSyncAt!)
               : 'Never synced';
           return {
-            'id': d.connectCode.hashCode,
+            'id': '${d.connectCode}_${d.userPhone}'.hashCode,
             'name': d.userName,
             'phone': d.userPhone,
             'code': d.connectCode,

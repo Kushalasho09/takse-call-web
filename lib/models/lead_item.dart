@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class CallActivityItem {
   final String id;
   final String callType; // "outgoing", "incoming", "missed", "rejected"
@@ -34,6 +36,7 @@ class LeadItem {
   final String phone;
   final String? altPhone;
   final String createdDate;
+  final DateTime? createdAt;
   final String? modifiedDate;
   final int attempts;
   final List<String> tags;
@@ -65,6 +68,8 @@ class LeadItem {
   bool isTrashed;
   bool isSelected;
 
+  DateTime get effectiveCreatedAt => createdAt ?? DateTime.now();
+
   LeadItem({
     required this.id,
     this.connectCode,
@@ -75,6 +80,7 @@ class LeadItem {
     required this.phone,
     this.altPhone,
     required this.createdDate,
+    this.createdAt,
     this.modifiedDate,
     this.attempts = 0,
     required this.tags,
@@ -119,6 +125,7 @@ class LeadItem {
     String? phone,
     String? altPhone,
     String? createdDate,
+    DateTime? createdAt,
     String? modifiedDate,
     int? attempts,
     List<String>? tags,
@@ -160,6 +167,7 @@ class LeadItem {
       phone: phone ?? this.phone,
       altPhone: altPhone ?? this.altPhone,
       createdDate: createdDate ?? this.createdDate,
+      createdAt: createdAt ?? this.createdAt,
       modifiedDate: modifiedDate ?? this.modifiedDate,
       attempts: attempts ?? this.attempts,
       tags: tags ?? this.tags,
@@ -201,32 +209,48 @@ class LeadItem {
       return ts.toString();
     }
 
+    DateTime? parsedCreated;
+    final rawCreated = data['createdAt'] ?? data['created_at'];
+    if (rawCreated is Timestamp) {
+      parsedCreated = rawCreated.toDate();
+    } else if (rawCreated is int) {
+      parsedCreated = DateTime.fromMillisecondsSinceEpoch(rawCreated);
+    } else if (rawCreated is String) {
+      parsedCreated = DateTime.tryParse(rawCreated);
+    } else if (data['createdDate'] is String) {
+      parsedCreated = DateTime.tryParse(data['createdDate']);
+    }
+
     return LeadItem(
       id: docId,
       connectCode: data['connectCode']?.toString(),
       userId: data['userId']?.toString(),
       srNo: index + 1,
       leadNumber: index + 1,
-      name: data['name'] ?? data['firstName'] ?? 'Lead',
-      phone: data['phoneNumber'] ?? data['phone'] ?? '',
+      name: data['name'] ?? data['firstName'] ?? data['Name'] ?? 'Lead',
+      phone: (data['phoneNumber'] ?? data['phone'] ?? data['mobile_number'] ?? docId).toString(),
       altPhone: data['altPhone'] ?? data['alternatePhone'],
-      createdDate: data['createdDate'] ?? '23 Sep 2026',
+      createdDate: data['createdDate'] ?? 'Live Sync',
+      createdAt: parsedCreated,
       modifiedDate: data['updatedAt'] != null ? 'Live Sync' : null,
       attempts: data['attempts'] is int ? data['attempts'] : 1,
       tags: tagsList.isNotEmpty ? tagsList : ['Inbound'],
-      tagAssignedDate: data['tagAssignedDate'] ?? '23 Sep 2026',
-      assignedTo: data['assignedTo'] ?? 'Kushal Asodia',
-      assignedToPhone: data['assignedToPhone'] ?? '+91 9081444096',
-      assignedDate: data['assignedDate'] ?? '23 Sep 2026, 10:00 AM',
-      status: data['status'] ?? 'New Inflow',
+      tagAssignedDate: data['tagAssignedDate'] ?? 'Live Sync',
+      assignedTo: data['assignedTo'] ?? 'Unassigned',
+      assignedToPhone: data['assignedToPhone'] ?? '',
+      assignedDate: data['assignedDate'] ?? '',
+      status: data['status'] ?? data['Status'] ?? 'New Inflow',
       reminderDate: data['reminderDate']?.toString(),
       lastCallEmployee: data['assignedTo'],
       lastCallType: data['lastCallType'] ?? 'outgoing',
       lastCallTime: formatTime(data['lastCallTime']),
       lastCallDuration: data['lastCallDuration'] != null ? '${data['lastCallDuration']}s' : '-',
       lastCallSummary: data['notes'] ?? data['description'],
-      company: data['companyName'] ?? data['company'],
-      email: data['email'],
+      company: data['companyName'] ?? data['company'] ?? data['Shop Name'],
+      email: data['email'] ?? data['Email'],
+      city: data['city'] ?? data['District'] ?? data['Block'],
+      state: data['state'] ?? data['State'],
+      zipcode: data['zipcode'] ?? data['Pincode'],
       description: data['notes'] ?? data['description'],
       isTrashed: data['isTrashed'] == true,
     );
