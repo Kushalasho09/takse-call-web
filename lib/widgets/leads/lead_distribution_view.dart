@@ -87,7 +87,7 @@ class _LeadDistributionViewState extends State<LeadDistributionView> {
     if (pendingLeads.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Aapki organization ki sabhi leads already assign ho chuki hain! Koi pending lead nahi hai.'),
+          content: Text('Aapke department ki sabhi leads already assign ho chuki hain! Koi pending lead nahi hai.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -97,7 +97,7 @@ class _LeadDistributionViewState extends State<LeadDistributionView> {
     if (employees.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Aapki organization me koi active employee nahi mila. Pehle Manage > Employees me employee register karein.'),
+          content: Text('Aapke department me koi active employee nahi mila. Pehle Manage > Employees me employee register karein.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -859,7 +859,7 @@ class _LeadDistributionViewState extends State<LeadDistributionView> {
   @override
   Widget build(BuildContext context) {
     final user = WebAuthService.currentUser;
-    final orgName = user?.companyName ?? user?.name ?? 'My Organization';
+    final orgName = user?.companyName ?? user?.name ?? 'My Department';
     final connectCode = user?.connectCode ?? '';
 
     return StreamBuilder<List<FirestoreDevice>>(
@@ -1094,7 +1094,7 @@ class _LeadDistributionViewState extends State<LeadDistributionView> {
           color: const Color(0xFF10B981),
         );
         final card4 = _buildMetricCard(
-          title: 'Organization Team',
+          title: 'Department Team',
           value: '$empCount Telecallers',
           subtitle: 'Connected mobile app',
           icon: Icons.people_alt_rounded,
@@ -1313,7 +1313,7 @@ class _LeadDistributionViewState extends State<LeadDistributionView> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                Text('Code: $connectCode • ${leads.length} Leads in Org', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8))),
+                Text('Code: $connectCode • ${leads.length} Leads in Department', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8))),
               ],
             ),
           ),

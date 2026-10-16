@@ -93,7 +93,7 @@ class _SubscriptionDialogState extends State<SubscriptionDialog> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Choose a plan that fits your call monitoring and team management needs',
+                      'Plans preview & licensing tiers (Enterprise Internal Mode)',
                       style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                     ),
                   ],
@@ -105,7 +105,40 @@ class _SubscriptionDialogState extends State<SubscriptionDialog> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            // Private Internal Company Mode Banner
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.verified_rounded, color: Color(0xFF16A34A), size: 22),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '🏢 Single-Company Internal Mode Active',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'This workspace operates under your company\'s centralized enterprise master license. Individual department billing and plan purchases are restricted to White-Label deployment. All department quotas are allocated directly by Super Admin.',
+                          style: TextStyle(fontSize: 11, color: Color(0xFF166534)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: List.generate(_plans.length, (index) {
@@ -232,28 +265,47 @@ class _SubscriptionDialogState extends State<SubscriptionDialog> {
                     Icon(Icons.shield_outlined, size: 16, color: AppColors.textMuted),
                     SizedBox(width: 6),
                     Text(
-                      '30-day money-back guarantee. No questions asked.',
+                      'Internal Master License: All department modules fully unlocked.',
                       style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                     ),
                   ],
                 ),
                 ElevatedButton.icon(
                   onPressed: () {
-                    Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Proceeding with ${_plans[_selectedPlanIndex]['name']} plan checkout...'),
-                        backgroundColor: AppColors.primary,
-                        behavior: SnackBarBehavior.floating,
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        title: const Row(
+                          children: [
+                            Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 22),
+                            SizedBox(width: 10),
+                            Text('Private Company Mode Active', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        content: const Text(
+                          'Currently, Takse Call is running in Private Internal Company Mode.\n\nIndividual departments (UI/UX, Frontend, Backend, QA, Sales) do not need to purchase separate plans. SaaS billing and plan checkout will be enabled when multi-tenant White-Label mode is activated.\n\nAll department resources and limits are managed directly by your Super Admin.',
+                          style: TextStyle(fontSize: 13, height: 1.4),
+                        ),
+                        actions: [
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Understood'),
+                          ),
+                        ],
                       ),
                     );
                   },
-                  icon: const Icon(Icons.lock_outline_rounded, size: 16),
-                  label: const Text('Proceed to Payment'),
+                  icon: const Icon(Icons.verified_rounded, size: 16),
+                  label: const Text('Managed by Super Admin (Active)'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: const Color(0xFF059669),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),

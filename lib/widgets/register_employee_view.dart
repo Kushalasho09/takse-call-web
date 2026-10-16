@@ -69,7 +69,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Send your organization connect code and app download instructions to your team members.',
+                'Send your department connect code and app download instructions to your team members.',
                 style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
@@ -89,7 +89,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Your Organization Device Connect Code', style: TextStyle(fontSize: 11, color: Color(0xFF92400E))),
+                        const Text('Your Department Device Connect Code', style: TextStyle(fontSize: 11, color: Color(0xFF92400E))),
                         Text(_code, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFFB45309), letterSpacing: 1.1)),
                       ],
                     ),
@@ -115,7 +115,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
                   border: Border.all(color: AppColors.border),
                 ),
                 child: SelectableText(
-                  'Hello team,\nPlease download the Callyzer / Takse Call Biz app from Google Play: https://play.google.com/store/apps/details?id=com.websoptimization.callyzerbiz\n\nWhen prompted, enter our organization connect code: $_code and choose your official work SIM.',
+                  'Hello team,\nPlease download the Callyzer / Takse Call Biz app from Google Play: https://play.google.com/store/apps/details?id=com.websoptimization.callyzerbiz\n\nWhen prompted, enter our department connect code: $_code and choose your official work SIM.',
                   style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.textPrimary),
                 ),
               ),
@@ -948,7 +948,7 @@ class _RegisterEmployeeViewState extends State<RegisterEmployeeView> {
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'All employees of your company use this SAME organization code to link their phones to your central admin dashboard.',
+                        'All employees of your department use this SAME department code to link their phones to the central dashboard.',
                         style: TextStyle(fontSize: 12, color: Color(0xFF1E40AF)),
                       ),
                     ),

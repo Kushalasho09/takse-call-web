@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/web_auth_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/subscription_dialog.dart';
 
 enum SettingsSubTab {
   companyProfile,
@@ -473,7 +474,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case SettingsSubTab.companyProfile:
         return _buildCompanyProfileTab();
       case SettingsSubTab.subscriptions:
-        return _buildGenericSettingsPlaceholder('Subscriptions & Licenses', 'Manage active team subscription plans and add-ons.');
+        return _buildSubscriptionsTab();
       case SettingsSubTab.taxInvoice:
         return _buildGenericSettingsPlaceholder('Tax Invoices', 'Download past billing invoices and GST receipts.');
       case SettingsSubTab.mySettings:
@@ -960,6 +961,125 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }).toList(),
               onChanged: onChanged,
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 4. Subscriptions & Licensing Tab (Enterprise Internal Mode)
+  Widget _buildSubscriptionsTab() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Subscriptions & Licenses',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+            letterSpacing: -0.3,
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Internal company workspace licensing and department resource allocations.',
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 24),
+
+        // Active Enterprise Card
+        Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFBBF7D0)),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.verified_user_rounded, color: Color(0xFF16A34A), size: 24),
+                      ),
+                      const SizedBox(width: 14),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Enterprise Internal License',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Active • Provisioned by Super Admin Headquarters',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF16A34A), fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                    ),
+                    child: const Text(
+                      '🏢 Single Company Mode',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              const Divider(height: 1),
+              const SizedBox(height: 18),
+              const Text(
+                'Department Notice:',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'This workspace is running for internal company operations. Individual department billing and plan purchases are restricted to White-Label deployment. All telemetry, unlimited call logs, SIM sync, and lead quotas are managed by Super Admin.',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => const SubscriptionDialog(),
+                  );
+                },
+                icon: const Icon(Icons.visibility_outlined, size: 16),
+                label: const Text('View Available Tiers (White-Label Preview)'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
           ),
         ),
       ],
